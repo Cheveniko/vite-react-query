@@ -1,35 +1,46 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useQuery, useMutation } from "@tanstack/react-query";
+
+const POSTS = [
+  { id: 1, title: "Post 1" },
+  { id: 2, title: "Post 2" },
+];
 
 function App() {
-  const [count, setCount] = useState(0)
+  const postsQuery = useQuery({
+    queryKey: ["posts"],
+    queryFn: async (obj) => {
+      console.log(obj);
+      await wait(1000);
+      return POSTS;
+    },
+  });
+  const newPostMutation = useMutation({
+    mutationFn: async (title: string) => {
+      await wait(1000);
+      //ts-ignore
+      POSTS.push({ id: crypto.randomUUID(), title });
+    },
+  });
+
+  if (postsQuery.isLoading) return <h1>Loading...</h1>;
+  if (postsQuery.isError) return <pre>{JSON.stringify(postsQuery.error)}</pre>;
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div>
+      {postsQuery.data?.map((post) => (
+        <div key={post.id}>{post.title}</div>
+      ))}
+      <button onClick={() => newPostMutation.mutate("New Post")}>
+        Add new
+      </button>
+    </div>
+  );
 }
 
-export default App
+function wait(duration: number) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, duration);
+  });
+}
+
+export default App;
